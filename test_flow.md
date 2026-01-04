@@ -3,7 +3,7 @@
 ## Setup (Chạy 1 lần)
 
 ```bash
-# 1. Load test data
+# 1. Load test data (ngày mốc: 2026-01-05)
 cd /home/oc/meeting_server
 mysql -u root -p123456 meeting_db < setup_test_data.sql
 
@@ -13,7 +13,7 @@ mysql -u root -p123456 meeting_db < setup_test_data.sql
 
 ## Test Accounts
 - **Students:** student1, student2, student3, student4 (pass: pass123)
-- **Teachers:** teacher1, teacher2 (pass: pass123)
+- **Teachers:** teacher1 (ID=5), teacher2 (ID=6) (pass: pass123)
 
 ---
 
@@ -22,41 +22,37 @@ mysql -u root -p123456 meeting_db < setup_test_data.sql
 ### Login
 1. Start client: `cd client && ./bin/meeting-client`
 2. Login → username: `student1`, password: `pass123`
-3. ✅ Vào Student Menu
+3. ✅ Vào Student Menu (3 options: View Free Slots, My Meetings, Logout)
 
-### View Free Slots
+### View Free Slots & Book Meeting
 1. Chọn "View Free Slots"
-2. ✅ Thấy 7 slots available
+2. ✅ Thấy danh sách slots (SlotID, TeacherID, Teacher, Start, End)
+3. Nhập SlotID: `1`
+4. Nhập TeacherID: `5`
+5. Chọn "Individual Meeting" hoặc "Group Meeting"
+6. Nếu Group: nhập Member IDs: `2,3`
+7. ✅ Booking success
 
-### Book Individual Meeting
-1. Chọn "Book Individual Meeting"
-2. Teacher ID: `5` (teacher1)
-3. Slot ID: `1` (slot đầu tiên)
-4. ✅ Success
-
-### Book Group Meeting
-1. Chọn "Book Group Meeting"
-2. Teacher ID: `5`
-3. Slot ID: `2` (group only slot)
-4. Member IDs: `2,3` (student2, student3)
-5. ✅ Success
-
-### View My Meetings
+### View My Meetings & Manage
 1. Chọn "My Meetings"
-2. Filter: "All"
-3. ✅ Thấy 2 meetings vừa book
+2. Chọn Filter: "All"
+3. ✅ Thấy danh sách meetings (MeetingID, Date, Time, Teacher, Type)
+4. Nhập MeetingID: `1`
+5. Sub-menu xuất hiện:
+   - "View Meeting Minutes" → xem nội dung minutes
+   - "Cancel Meeting" → hủy meeting
+   - "Back"
 
 ### View Minutes
-1. Chọn "View Meeting Minutes"
-2. Meeting ID: `2` (có minutes sẵn)
-3. ✅ Hiển thị nội dung
+1. Trong My Meetings, nhập MeetingID có minutes (ID từ test data)
+2. Chọn "View Meeting Minutes"
+3. ✅ Hiển thị nội dung minutes
 
 ### Cancel Meeting
-1. Chọn "Cancel Meeting"
-2. Meeting ID: `1` (meeting vừa book)
+1. Trong My Meetings, nhập MeetingID: `1`
+2. Chọn "Cancel Meeting"
 3. Confirm: Y
-4. ✅ Success
-5. View My Meetings → chỉ còn 1 meeting
+4. ✅ Cancel success
 
 ### Logout
 1. Chọn "Logout"
@@ -68,52 +64,47 @@ mysql -u root -p123456 meeting_db < setup_test_data.sql
 
 ### Login
 1. Login → username: `teacher1`, password: `pass123`
-2. ✅ Vào Teacher Menu
+2. ✅ Vào Teacher Menu (4 options: Manage Slots, View Appointments, View Student History, Logout)
 
-### Add Slot
-1. Chọn "Manage Slots" → "Add New Slot"
-2. Date: `2025-01-20`
-3. Start: `09:00`
-4. End: `10:00`
-5. Type: "Individual Only"
-6. ✅ Success
+### Manage Slots
+1. Chọn "Manage Slots"
+2. ✅ Thấy danh sách slots hiện có (SlotID, Date, Start, End, Type, Booked)
+3. **Add Slot:**
+   - Nhập `1` → Add
+   - Date: `2026-01-10`
+   - Start: `09:00`
+   - End: `10:00`
+   - Type: "Individual Only"
+   - ✅ Success
+4. **Update Slot:**
+   - Nhập `2` → Update
+   - Slot ID to update: `<slot_id>`
+   - Nhập thông tin mới
+   - ✅ Success
+5. **Delete Slot:**
+   - Nhập `3` → Delete
+   - Slot ID to delete: `<slot_id>` (chưa booked)
+   - Confirm: Y
+   - ✅ Success
+6. Nhập `0` → Back
 
-### Update Slot
-1. Chọn "Manage Slots" → "Update Slot"
-2. Slot ID: `1`
-3. New Date: `2025-01-21`
-4. New Start: `10:00`
-5. New End: `11:00`
-6. ✅ Success
-
-### View Appointments
+### View Appointments & Add/Edit Minutes
 1. Chọn "View Appointments"
-2. Filter: "All"
-3. ✅ Thấy meetings đã được book
-
-### Add Minutes
-1. Chọn "Add Meeting Minutes"
-2. Meeting ID: `2`
-3. Nhập nội dung:
-   ```
-   Meeting Summary
-   Date: 2025-01-17
-   Attendees: student2, student3, student4
-   Topics: Project discussion
-   ```
-4. Ctrl+D
-5. ✅ Success
+2. Chọn Filter: "Today" / "This Week" / "All"
+3. ✅ Thấy danh sách appointments (MeetingID, Date, Time, Student, Type)
+4. Nhập MeetingID để add/edit minutes: `2`
+5. ✅ Load existing minutes (nếu có) vào editor
+6. Sửa/thêm nội dung
+7. Ctrl+D để save
+8. ✅ "Minutes added successfully!" hoặc "Minutes updated successfully!"
 
 ### View Student History
 1. Chọn "View Student History"
-2. Student ID: `1`
-3. ✅ Thấy lịch sử meetings của student1
-
-### Delete Slot
-1. Chọn "Manage Slots" → "Delete Slot"
-2. Slot ID: `4` (slot chưa book)
-3. Confirm: Y
-4. ✅ Success
+2. ✅ Thấy danh sách students (StudentID, Username)
+3. Nhập StudentID: `1`
+4. ✅ Thấy lịch sử meetings của student1 (MeetingID, Date, Has Minutes)
+5. Nhập MeetingID để xem minutes
+6. ✅ Hiển thị nội dung minutes
 
 ### Logout
 1. Chọn "Logout"
@@ -147,45 +138,48 @@ mysql -u root -p123456 meeting_db < setup_test_data.sql
 ## Quick Verification
 
 ```bash
-# Check database
-mysql -u root -p123456 meeting_db -e "
-SELECT u.username, u.role, COUNT(m.meeting_id) as meetings
-FROM users u
-LEFT JOIN meetings m ON u.user_id = m.organizer_id
-GROUP BY u.user_id;
-"
+# Check users
+mysql -u root -p123456 meeting_db -e "SELECT user_id, username, role FROM users;"
 
 # Check slots
 mysql -u root -p123456 meeting_db -e "
-SELECT s.slot_id, u.username as teacher, s.start_time, s.is_booked
-FROM slots s
-JOIN users u ON s.teacher_id = u.user_id
-ORDER BY s.start_time;
-"
+SELECT s.slot_id, u.username as teacher, DATE(s.start_time) as date, 
+       TIME(s.start_time) as start, s.is_booked
+FROM slots s JOIN users u ON s.teacher_id = u.user_id
+ORDER BY s.start_time;"
+
+# Check meetings
+mysql -u root -p123456 meeting_db -e "
+SELECT m.meeting_id, u1.username as student, u2.username as teacher, 
+       DATE(s.start_time) as date, m.status
+FROM meetings m 
+JOIN slots s ON m.slot_id = s.slot_id
+JOIN users u1 ON m.student_id = u1.user_id
+JOIN users u2 ON s.teacher_id = u2.user_id;"
 ```
 
 ---
 
 ## Expected Results Summary
 
-✅ Students can:
-- View free slots
-- Book individual meetings
-- Book group meetings
-- View their meetings
-- Cancel meetings
-- View minutes
+### Students can:
+- ✅ View free slots (by SlotID, TeacherID)
+- ✅ Book individual/group meetings (nhập SlotID + TeacherID)
+- ✅ View their meetings (by MeetingID)
+- ✅ Cancel meetings (by MeetingID)
+- ✅ View minutes (by MeetingID)
 
-✅ Teachers can:
-- Add/update/delete slots
-- View appointments
-- Add minutes
-- View student history
+### Teachers can:
+- ✅ View their slots list
+- ✅ Add/update/delete slots (by SlotID)
+- ✅ View appointments with filters
+- ✅ Add/edit minutes (load existing, edit, save)
+- ✅ View student list and history
 
-✅ Both can:
-- Register with role selection
-- Login with correct menu
-- Logout
+### Both can:
+- ✅ Register with role selection
+- ✅ Login with correct menu
+- ✅ Logout
 
 ---
 
