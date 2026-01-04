@@ -1,0 +1,42 @@
+[
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/main.c -o obj/main.o",
+    "file": "src/main.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/network.c -o obj/network.o",
+    "file": "src/network.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/protocol_client.c -o obj/protocol_client.o",
+    "file": "src/protocol_client.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/ui_auth.c -o obj/ui_auth.o",
+    "file": "src/ui_auth.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/ui_components.c -o obj/ui_components.o",
+    "file": "src/ui_components.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/ui_core.c -o obj/ui_core.o",
+    "file": "src/ui_core.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/ui_student.c -o obj/ui_student.o",
+    "file": "src/ui_student.c"
+  },
+  {
+    "directory": "/home/oc/meeting_server/client",
+    "command": "gcc -Wall -Wextra -g -I./include -c src/ui_teacher.c -o obj/ui_teacher.o",
+    "file": "src/ui_teacher.c"
+  }
+]

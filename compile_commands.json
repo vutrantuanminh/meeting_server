@@ -1,0 +1,42 @@
+[
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/auth.c -o obj/auth.o",
+        "file": "src/auth.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/database.c -o obj/database.o",
+        "file": "src/database.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/handler_auth.c -o obj/handler_auth.o",
+        "file": "src/handler_auth.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/handler_meeting.c -o obj/handler_meeting.o",
+        "file": "src/handler_meeting.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/handler_slot.c -o obj/handler_slot.o",
+        "file": "src/handler_slot.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/protocol.c -o obj/protocol.o",
+        "file": "src/protocol.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/server.c -o obj/server.o",
+        "file": "src/server.c"
+    },
+    {
+        "directory": "/home/oc/meeting_server",
+        "command": "gcc -Wall -Wextra -g -I./include -I/usr/include/mysql -c src/utils.c -o obj/utils.o",
+        "file": "src/utils.c"
+    }
+]
