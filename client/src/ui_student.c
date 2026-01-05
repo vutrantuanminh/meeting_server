@@ -87,28 +87,28 @@ static void view_free_slots(int sockfd, const char *token) {
 
   int y = 3;
   attron(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
-  mvprintw(y++, 2, "%-8s %-10s %-12s %-12s %-8s %-8s", "SlotID", "TeacherID",
-           "Teacher", "Date", "Start", "End");
+  mvprintw(y++, 2, "%-6s %-10s %-10s %-11s %-6s %-6s %-10s", "SlotID",
+           "TeacherID", "Teacher", "Date", "Start", "End", "Type");
   attroff(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
-  mvhline(y++, 2, ACS_HLINE, 65);
+  mvhline(y++, 2, ACS_HLINE, 70);
 
   for (int i = 0; i < field_count && y < LINES - 8; i++) {
     char *slot_copy = strdup(fields[i]);
-    char *parts[5];
+    char *parts[6];
     int part_idx = 0;
     char *token_ptr = strtok(slot_copy, "&");
-    while (token_ptr && part_idx < 5) {
+    while (token_ptr && part_idx < 6) {
       parts[part_idx++] = token_ptr;
       token_ptr = strtok(NULL, "&");
     }
 
-    if (part_idx >= 5) {
+    if (part_idx >= 6) {
       char date[20], time1[20], time2[20];
       sscanf(parts[3], "%s %s", date, time1); // Get date and start time
       sscanf(parts[4], "%*s %s", time2);      // Get end time only
 
-      mvprintw(y++, 2, "%-8s %-10s %-12s %-12s %-8s %-8s", parts[0], parts[1],
-               parts[2], date, time1, time2);
+      mvprintw(y++, 2, "%-6s %-10s %-10s %-11s %-6s %-6s %-10s", parts[0],
+               parts[1], parts[2], date, time1, time2, parts[5]);
     }
     free(slot_copy);
   }

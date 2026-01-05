@@ -281,13 +281,17 @@ Response *handle_list_free_slots(Request *req, MYSQL *db_conn) {
   if (teacher_id == 0) {
     snprintf(
         query, sizeof(query),
-        "SELECT s.slot_id, s.teacher_id, u.username, s.start_time, s.end_time "
+        "SELECT s.slot_id, s.teacher_id, u.username, s.start_time, s.end_time, "
+        "CASE s.slot_type WHEN 0 THEN 'Individual' WHEN 1 THEN 'Group' ELSE "
+        "'Both' END "
         "FROM slots s JOIN users u ON s.teacher_id = u.user_id "
         "WHERE s.is_booked=0 ORDER BY s.start_time");
   } else {
     snprintf(
         query, sizeof(query),
-        "SELECT s.slot_id, s.teacher_id, u.username, s.start_time, s.end_time "
+        "SELECT s.slot_id, s.teacher_id, u.username, s.start_time, s.end_time, "
+        "CASE s.slot_type WHEN 0 THEN 'Individual' WHEN 1 THEN 'Group' ELSE "
+        "'Both' END "
         "FROM slots s JOIN users u ON s.teacher_id = u.user_id "
         "WHERE s.teacher_id=%d AND s.is_booked=0 ORDER BY s.start_time",
         teacher_id);
@@ -311,8 +315,8 @@ Response *handle_list_free_slots(Request *req, MYSQL *db_conn) {
       strcat(payload, "||");
 
     char slot_str[256];
-    snprintf(slot_str, sizeof(slot_str), "%s&%s&%s&%s&%s", row[0], row[1],
-             row[2], row[3], row[4]);
+    snprintf(slot_str, sizeof(slot_str), "%s&%s&%s&%s&%s&%s", row[0], row[1],
+             row[2], row[3], row[4], row[5]);
     strcat(payload, slot_str);
 
     first = 0;
