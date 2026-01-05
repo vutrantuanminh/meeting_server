@@ -361,8 +361,8 @@ Response *handle_list_meetings(Request *req, MYSQL *db_conn) {
   // Parse filter: "date" = today, "week" = this week, "" = all
   char *filter = req->data;
 
-  // Build query with filter
-  char query[1024];
+  // Build query with filter - include both organizer and group members
+  char query[2048];
 
   if (filter && strcmp(filter, "date") == 0) {
     // Filter: Today only
@@ -374,8 +374,16 @@ Response *handle_list_meetings(Request *req, MYSQL *db_conn) {
         "JOIN users u ON s.teacher_id = u.user_id "
         "WHERE m.student_id=%d AND m.status='pending' "
         "AND DATE(s.start_time) = CURDATE() "
-        "ORDER BY s.start_time",
-        token_data->user_id);
+        "UNION "
+        "SELECT m.meeting_id, s.start_time, s.end_time, u.username, m.is_group "
+        "FROM meetings m "
+        "JOIN slots s ON m.slot_id = s.slot_id "
+        "JOIN users u ON s.teacher_id = u.user_id "
+        "JOIN group_members gm ON m.meeting_id = gm.meeting_id "
+        "WHERE gm.student_id=%d AND m.status='pending' "
+        "AND DATE(s.start_time) = CURDATE() "
+        "ORDER BY start_time",
+        token_data->user_id, token_data->user_id);
   } else if (filter && strcmp(filter, "week") == 0) {
     // Filter: This week
     snprintf(
@@ -386,8 +394,16 @@ Response *handle_list_meetings(Request *req, MYSQL *db_conn) {
         "JOIN users u ON s.teacher_id = u.user_id "
         "WHERE m.student_id=%d AND m.status='pending' "
         "AND YEARWEEK(s.start_time, 1) = YEARWEEK(CURDATE(), 1) "
-        "ORDER BY s.start_time",
-        token_data->user_id);
+        "UNION "
+        "SELECT m.meeting_id, s.start_time, s.end_time, u.username, m.is_group "
+        "FROM meetings m "
+        "JOIN slots s ON m.slot_id = s.slot_id "
+        "JOIN users u ON s.teacher_id = u.user_id "
+        "JOIN group_members gm ON m.meeting_id = gm.meeting_id "
+        "WHERE gm.student_id=%d AND m.status='pending' "
+        "AND YEARWEEK(s.start_time, 1) = YEARWEEK(CURDATE(), 1) "
+        "ORDER BY start_time",
+        token_data->user_id, token_data->user_id);
   } else {
     // No filter: All meetings
     snprintf(
@@ -397,8 +413,15 @@ Response *handle_list_meetings(Request *req, MYSQL *db_conn) {
         "JOIN slots s ON m.slot_id = s.slot_id "
         "JOIN users u ON s.teacher_id = u.user_id "
         "WHERE m.student_id=%d AND m.status='pending' "
-        "ORDER BY s.start_time",
-        token_data->user_id);
+        "UNION "
+        "SELECT m.meeting_id, s.start_time, s.end_time, u.username, m.is_group "
+        "FROM meetings m "
+        "JOIN slots s ON m.slot_id = s.slot_id "
+        "JOIN users u ON s.teacher_id = u.user_id "
+        "JOIN group_members gm ON m.meeting_id = gm.meeting_id "
+        "WHERE gm.student_id=%d AND m.status='pending' "
+        "ORDER BY start_time",
+        token_data->user_id, token_data->user_id);
   }
 
   MYSQL_RES *result = db_query(db_conn, query);
