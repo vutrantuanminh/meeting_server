@@ -87,10 +87,10 @@ static void view_free_slots(int sockfd, const char *token) {
 
   int y = 3;
   attron(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
-  mvprintw(y++, 2, "%-8s %-10s %-12s %-12s %-12s", "SlotID", "TeacherID",
-           "Teacher", "Start", "End");
+  mvprintw(y++, 2, "%-8s %-10s %-12s %-12s %-8s %-8s", "SlotID", "TeacherID",
+           "Teacher", "Date", "Start", "End");
   attroff(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
-  mvhline(y++, 2, ACS_HLINE, 60);
+  mvhline(y++, 2, ACS_HLINE, 65);
 
   for (int i = 0; i < field_count && y < LINES - 8; i++) {
     char *slot_copy = strdup(fields[i]);
@@ -103,12 +103,12 @@ static void view_free_slots(int sockfd, const char *token) {
     }
 
     if (part_idx >= 5) {
-      char time1[20], time2[20];
-      sscanf(parts[3], "%*s %s", time1);
-      sscanf(parts[4], "%*s %s", time2);
+      char date[20], time1[20], time2[20];
+      sscanf(parts[3], "%s %s", date, time1); // Get date and start time
+      sscanf(parts[4], "%*s %s", time2);      // Get end time only
 
-      mvprintw(y++, 2, "%-8s %-10s %-12s %-12s %-12s", parts[0], parts[1],
-               parts[2], time1, time2);
+      mvprintw(y++, 2, "%-8s %-10s %-12s %-12s %-8s %-8s", parts[0], parts[1],
+               parts[2], date, time1, time2);
     }
     free(slot_copy);
   }

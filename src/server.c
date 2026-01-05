@@ -17,6 +17,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// Global client counter
+static int client_counter = 0;
+
 // ============= READ LINE =============
 int read_line(int fd, char *buffer, int max_len) {
   int total = 0;
@@ -102,7 +105,7 @@ Response *process_command(Request *req, MYSQL *db_conn) {
 void handle_client(int client_fd, MYSQL *db_conn) {
   char buffer[BUFFER_SIZE];
 
-  log_message("INFO", "Client connected: fd=%d", client_fd);
+  log_message("INFO", "Handling client: fd=%d", client_fd);
 
   int flag = 1;
   setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
@@ -217,6 +220,12 @@ int main(void) {
     }
 
     pid_t pid = fork();
+    int client_id = ++client_counter;
+    char client_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+
+    log_message("INFO", "Client #%d connected from %s (fd=%d)", client_id,
+                client_ip, client_fd);
 
     if (pid == 0) {
       close(server_fd);
