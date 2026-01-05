@@ -26,27 +26,22 @@ Response *handle_book_individual(Request *req, MYSQL *db_conn) {
     return res;
   }
 
-  // Parse data: teacher_id&slot_id
-  int field_count;
-  char **fields = parse_subfields(req->data, &field_count);
+  // Parse data: slot_id only
+  int slot_id = atoi(trim(req->data));
 
-  if (field_count != 2) {
+  if (slot_id <= 0) {
     res->status_code = STATUS_BAD_REQUEST;
-    strcpy(res->payload, "BOOK_INDIVIDUAL_INVALID_FORMAT");
+    strcpy(res->payload, "BOOK_INDIVIDUAL_INVALID_SLOT_ID");
     free_token_data(token_data);
-    free_split(fields, field_count);
     return res;
   }
-
-  int teacher_id = atoi(trim(fields[0]));
-  int slot_id = atoi(trim(fields[1]));
 
   // Check slot exists, not booked, and allows individual
   char query[1024];
   snprintf(query, sizeof(query),
-           "SELECT slot_type, is_booked FROM slots "
-           "WHERE slot_id=%d AND teacher_id=%d",
-           slot_id, teacher_id);
+           "SELECT slot_type, is_booked, teacher_id FROM slots "
+           "WHERE slot_id=%d",
+           slot_id);
 
   MYSQL_RES *result = db_query(db_conn, query);
 
@@ -56,13 +51,13 @@ Response *handle_book_individual(Request *req, MYSQL *db_conn) {
     if (result)
       mysql_free_result(result);
     free_token_data(token_data);
-    free_split(fields, field_count);
     return res;
   }
 
   MYSQL_ROW row = mysql_fetch_row(result);
   int slot_type = atoi(row[0]);
   int is_booked = atoi(row[1]);
+  int teacher_id = atoi(row[2]);
   mysql_free_result(result);
 
   // Check if slot allows individual (type 0 or 2)
@@ -70,7 +65,6 @@ Response *handle_book_individual(Request *req, MYSQL *db_conn) {
     res->status_code = STATUS_FORBIDDEN;
     strcpy(res->payload, "BOOK_INDIVIDUAL_SLOT_NOT_SUITABLE");
     free_token_data(token_data);
-    free_split(fields, field_count);
     return res;
   }
 
@@ -78,7 +72,6 @@ Response *handle_book_individual(Request *req, MYSQL *db_conn) {
     res->status_code = STATUS_CONFLICT;
     strcpy(res->payload, "BOOK_INDIVIDUAL_SLOT_NOT_FREE");
     free_token_data(token_data);
-    free_split(fields, field_count);
     return res;
   }
 
@@ -94,7 +87,6 @@ Response *handle_book_individual(Request *req, MYSQL *db_conn) {
     res->status_code = STATUS_INTERNAL_ERROR;
     strcpy(res->payload, "BOOK_INDIVIDUAL_INTERNAL_ERROR");
     free_token_data(token_data);
-    free_split(fields, field_count);
     return res;
   }
 
@@ -110,12 +102,11 @@ Response *handle_book_individual(Request *req, MYSQL *db_conn) {
   snprintf(res->payload, sizeof(res->payload), "BOOK_INDIVIDUAL_SUCCESS||%d",
            meeting_id);
 
-  log_message("INFO", "Meeting booked: id=%d, student=%d, slot=%d", meeting_id,
-              token_data->user_id, slot_id);
+  log_message("INFO", "Meeting booked: id=%d, student=%d, slot=%d, teacher=%d",
+              meeting_id, token_data->user_id, slot_id, teacher_id);
 
   // Cleanup
   free_token_data(token_data);
-  free_split(fields, field_count);
 
   return res;
 }
@@ -140,11 +131,11 @@ Response *handle_book_group(Request *req, MYSQL *db_conn) {
     return res;
   }
 
-  // Parse data: teacher_id&slot_id&member_id|member_id|...
+  // Parse data: slot_id&member_id|member_id|...
   int field_count;
   char **fields = parse_subfields(req->data, &field_count);
 
-  if (field_count < 2) {
+  if (field_count < 1) {
     res->status_code = STATUS_BAD_REQUEST;
     strcpy(res->payload, "BOOK_GROUP_INVALID_FORMAT");
     free_token_data(token_data);
@@ -152,16 +143,23 @@ Response *handle_book_group(Request *req, MYSQL *db_conn) {
     return res;
   }
 
-  int teacher_id = atoi(trim(fields[0]));
-  int slot_id = atoi(trim(fields[1]));
+  int slot_id = atoi(trim(fields[0]));
+
+  if (slot_id <= 0) {
+    res->status_code = STATUS_BAD_REQUEST;
+    strcpy(res->payload, "BOOK_GROUP_INVALID_SLOT_ID");
+    free_token_data(token_data);
+    free_split(fields, field_count);
+    return res;
+  }
 
   // Parse member IDs (if provided)
   int *member_ids = NULL;
   int member_count = 0;
 
-  if (field_count > 2) {
+  if (field_count > 1) {
     int sub_count;
-    char **members = split_string(fields[2], "|", &sub_count);
+    char **members = split_string(fields[1], "|", &sub_count);
     member_ids = malloc(sizeof(int) * sub_count);
 
     for (int i = 0; i < sub_count; i++) {
@@ -174,9 +172,9 @@ Response *handle_book_group(Request *req, MYSQL *db_conn) {
   // Check slot exists and allows group
   char query[1024];
   snprintf(query, sizeof(query),
-           "SELECT slot_type, is_booked FROM slots "
-           "WHERE slot_id=%d AND teacher_id=%d",
-           slot_id, teacher_id);
+           "SELECT slot_type, is_booked, teacher_id FROM slots "
+           "WHERE slot_id=%d",
+           slot_id);
 
   MYSQL_RES *result = db_query(db_conn, query);
 
@@ -195,11 +193,12 @@ Response *handle_book_group(Request *req, MYSQL *db_conn) {
   MYSQL_ROW row = mysql_fetch_row(result);
   int slot_type = atoi(row[0]);
   int is_booked = atoi(row[1]);
+  int teacher_id = atoi(row[2]);
   mysql_free_result(result);
 
   // Check if slot allows group (type 1 or 2)
   if (slot_type == 0) {
-    res->status_code = STATUS_USERNAME_EXISTS; // 4090
+    res->status_code = STATUS_FORBIDDEN;
     strcpy(res->payload, "BOOK_GROUP_SLOT_NOT_SUITABLE");
     free_token_data(token_data);
     free_split(fields, field_count);
@@ -257,8 +256,9 @@ Response *handle_book_group(Request *req, MYSQL *db_conn) {
   snprintf(res->payload, sizeof(res->payload), "BOOK_GROUP_SUCCESS||%d",
            meeting_id);
 
-  log_message("INFO", "Group meeting booked: id=%d, leader=%d, members=%d",
-              meeting_id, token_data->user_id, member_count);
+  log_message("INFO",
+              "Group meeting booked: id=%d, leader=%d, members=%d, teacher=%d",
+              meeting_id, token_data->user_id, member_count, teacher_id);
 
   // Cleanup
   free_token_data(token_data);

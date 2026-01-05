@@ -121,6 +121,7 @@ static void view_free_slots(int sockfd, const char *token) {
   refresh();
 
   char slot_input[20];
+  memset(slot_input, 0, sizeof(slot_input));
   echo();
   getnstr(slot_input, 19);
   noecho();
@@ -129,20 +130,7 @@ static void view_free_slots(int sockfd, const char *token) {
     return;
   }
 
-  // Ask for Teacher ID
-  mvprintw(y + 2, 2, "Enter TeacherID: ");
-  refresh();
-
-  char teacher_input[20];
-  echo();
-  getnstr(teacher_input, 19);
-  noecho();
-
-  if (strlen(teacher_input) == 0) {
-    return;
-  }
-
-  // Book the slot
+  // Book the slot - no need to ask for TeacherID
   clear_screen();
   draw_header("BOOK MEETING");
 
@@ -153,12 +141,9 @@ static void view_free_slots(int sockfd, const char *token) {
     return;
 
   if (book_type == 0) {
-    // Book individual
-    char data[256];
-    snprintf(data, sizeof(data), "%s&%s", teacher_input, slot_input);
-
+    // Book individual - only slot_id
     show_info("Booking individual meeting...");
-    if (send_request(sockfd, "BOOK_INDIVIDUAL", token, data) < 0) {
+    if (send_request(sockfd, "BOOK_INDIVIDUAL", token, slot_input) < 0) {
       show_error("Failed to send request");
     } else {
       char *raw = receive_response(sockfd);
@@ -173,7 +158,7 @@ static void view_free_slots(int sockfd, const char *token) {
     }
     napms(2000);
   } else {
-    // Book group
+    // Book group - slot_id&member_ids
     char *members = show_input_form("Member IDs (comma separated):", false);
     if (!members)
       return;
@@ -184,8 +169,7 @@ static void view_free_slots(int sockfd, const char *token) {
     }
 
     char data[512];
-    snprintf(data, sizeof(data), "%s&%s&%s", teacher_input, slot_input,
-             members);
+    snprintf(data, sizeof(data), "%s&%s", slot_input, members);
 
     show_info("Booking group meeting...");
     if (send_request(sockfd, "BOOK_GROUP", token, data) < 0) {
