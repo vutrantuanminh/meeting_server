@@ -425,10 +425,23 @@ Response *handle_list_students(Request *req, MYSQL *db_conn) {
     return res;
   }
 
-  char query[256];
+  // Only get students who have meetings with this teacher
+  char query[512];
   snprintf(query, sizeof(query),
-           "SELECT user_id, username FROM users WHERE role='student' ORDER BY "
-           "username");
+           "SELECT DISTINCT u.user_id, u.username "
+           "FROM users u "
+           "JOIN meetings m ON u.user_id = m.student_id "
+           "JOIN slots s ON m.slot_id = s.slot_id "
+           "WHERE s.teacher_id = %d "
+           "UNION "
+           "SELECT DISTINCT u.user_id, u.username "
+           "FROM users u "
+           "JOIN group_members gm ON u.user_id = gm.student_id "
+           "JOIN meetings m ON gm.meeting_id = m.meeting_id "
+           "JOIN slots s ON m.slot_id = s.slot_id "
+           "WHERE s.teacher_id = %d "
+           "ORDER BY username",
+           token_data->user_id, token_data->user_id);
 
   MYSQL_RES *result = db_query(db_conn, query);
 
@@ -462,7 +475,8 @@ Response *handle_list_students(Request *req, MYSQL *db_conn) {
   res->status_code = STATUS_OK;
   strcpy(res->payload, payload);
 
-  log_message("INFO", "Listed students by teacher_id=%d", token_data->user_id);
+  log_message("INFO", "Listed students with meetings for teacher_id=%d",
+              token_data->user_id);
 
   mysql_free_result(result);
   free_token_data(token_data);

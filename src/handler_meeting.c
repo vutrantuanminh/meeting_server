@@ -607,10 +607,11 @@ Response *handle_add_minutes(Request *req, MYSQL *db_conn) {
   int meeting_id = atoi(trim(fields[0]));
   char *content = fields[1]; // Plain text content
 
-  // Check meeting exists and belongs to teacher
+  // Check meeting exists, belongs to teacher, and has already started
   char query[512];
   snprintf(query, sizeof(query),
-           "SELECT s.teacher_id FROM meetings m "
+           "SELECT s.teacher_id, s.start_time <= NOW() as has_started "
+           "FROM meetings m "
            "JOIN slots s ON m.slot_id = s.slot_id "
            "WHERE m.meeting_id=%d",
            meeting_id);
@@ -629,11 +630,21 @@ Response *handle_add_minutes(Request *req, MYSQL *db_conn) {
 
   MYSQL_ROW row = mysql_fetch_row(result);
   int teacher_id = atoi(row[0]);
+  int has_started = atoi(row[1]);
   mysql_free_result(result);
 
   if (teacher_id != token_data->user_id) {
     res->status_code = STATUS_FORBIDDEN;
     strcpy(res->payload, "ADD_MINUTES_FORBIDDEN");
+    free_token_data(token_data);
+    free_split(fields, field_count);
+    return res;
+  }
+
+  // Check if meeting has started
+  if (!has_started) {
+    res->status_code = STATUS_FORBIDDEN;
+    strcpy(res->payload, "ADD_MINUTES_MEETING_NOT_STARTED");
     free_token_data(token_data);
     free_split(fields, field_count);
     return res;
@@ -742,14 +753,19 @@ Response *handle_view_history(Request *req, MYSQL *db_conn) {
   // Parse data: student_id
   int student_id = atoi(trim(req->data));
 
-  // Query history
-  char query[1024];
+  // Query history - include both organizer and group member
+  char query[2048];
   snprintf(query, sizeof(query),
            "SELECT m.meeting_id, s.start_time FROM meetings m "
            "JOIN slots s ON m.slot_id = s.slot_id "
            "WHERE m.student_id=%d AND s.teacher_id=%d "
-           "ORDER BY s.start_time DESC",
-           student_id, token_data->user_id);
+           "UNION "
+           "SELECT m.meeting_id, s.start_time FROM meetings m "
+           "JOIN slots s ON m.slot_id = s.slot_id "
+           "JOIN group_members gm ON m.meeting_id = gm.meeting_id "
+           "WHERE gm.student_id=%d AND s.teacher_id=%d "
+           "ORDER BY start_time DESC",
+           student_id, token_data->user_id, student_id, token_data->user_id);
 
   MYSQL_RES *result = db_query(db_conn, query);
 
