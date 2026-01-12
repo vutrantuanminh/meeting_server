@@ -25,6 +25,8 @@ void show_student_menu(int sockfd, const char *token, const char *username) {
     int choice = show_menu(title, items, 3);
 
     if (choice == -1 || choice == 2) { // ESC or Logout
+      send_request(sockfd, "LOGOUT", token, "");
+      receive_response(sockfd); // Ignore response
       break;
     }
 
