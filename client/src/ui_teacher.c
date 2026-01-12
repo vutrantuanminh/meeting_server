@@ -209,9 +209,28 @@ static void manage_slots(int sockfd, const char *token) {
         continue;
       }
 
+      // Ask for slot type
+      clear_screen();
+      draw_header("UPDATE SLOT - Select Type");
+      const char *type_items[] = {"Individual", "Group", "Both"};
+      int slot_type = show_menu("Select Slot Type", type_items, 3);
+      if (slot_type == -1) {
+        free(slot_id);
+        free(date);
+        free(start_time);
+        free(end_time);
+        continue;
+      }
+
+      // Format: slot_id&start_datetime&end_datetime&slot_type
+      char start_datetime[32], end_datetime[32];
+      snprintf(start_datetime, sizeof(start_datetime), "%s %s:00", date,
+               start_time);
+      snprintf(end_datetime, sizeof(end_datetime), "%s %s:00", date, end_time);
+
       char data[512];
-      snprintf(data, sizeof(data), "%s||%s||%s||%s", slot_id, date, start_time,
-               end_time);
+      snprintf(data, sizeof(data), "%s&%s&%s&%d", slot_id, start_datetime,
+               end_datetime, slot_type);
 
       show_info("Updating slot...");
 
