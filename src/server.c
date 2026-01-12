@@ -91,6 +91,8 @@ Response *process_command(Request *req, MYSQL *db_conn) {
     return handle_list_my_slots(req, db_conn);
   } else if (strcmp(req->command, "LIST_STUDENTS") == 0) {
     return handle_list_students(req, db_conn);
+  } else if (strcmp(req->command, "LIST_ALL_STUDENTS") == 0) {
+    return handle_list_all_students(req, db_conn);
   }
 
   // UNKNOWN COMMAND

@@ -10,5 +10,6 @@ Response *handle_delete_slot(Request *req, MYSQL *db_conn);
 Response *handle_list_free_slots(Request *req, MYSQL *db_conn);
 Response *handle_list_my_slots(Request *req, MYSQL *db_conn);
 Response *handle_list_students(Request *req, MYSQL *db_conn);
+Response *handle_list_all_students(Request *req, MYSQL *db_conn);
 
 #endif

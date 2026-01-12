@@ -483,3 +483,62 @@ Response *handle_list_students(Request *req, MYSQL *db_conn) {
 
   return res;
 }
+
+// ============= LIST_ALL_STUDENTS (for group booking) =============
+Response *handle_list_all_students(Request *req, MYSQL *db_conn) {
+  Response *res = calloc(1, sizeof(Response));
+
+  TokenData *token_data = validate_token(req->token);
+  if (!token_data) {
+    res->status_code = STATUS_TOKEN_INVALID;
+    strcpy(res->payload, "LIST_ALL_STUDENTS_INVALID_TOKEN");
+    return res;
+  }
+
+  // Get all students except the current user
+  char query[256];
+  snprintf(query, sizeof(query),
+           "SELECT user_id, username FROM users "
+           "WHERE role='student' AND user_id != %d "
+           "ORDER BY username",
+           token_data->user_id);
+
+  MYSQL_RES *result = db_query(db_conn, query);
+
+  if (!result) {
+    res->status_code = STATUS_INTERNAL_ERROR;
+    strcpy(res->payload, "LIST_ALL_STUDENTS_INTERNAL_ERROR");
+    free_token_data(token_data);
+    return res;
+  }
+
+  char payload[4096] = "LIST_ALL_STUDENTS_SUCCESS||";
+  int first = 1;
+
+  MYSQL_ROW row;
+  while ((row = mysql_fetch_row(result))) {
+    if (!first)
+      strcat(payload, "||");
+
+    char student_str[128];
+    snprintf(student_str, sizeof(student_str), "%s&%s", row[0], row[1]);
+    strcat(payload, student_str);
+
+    first = 0;
+  }
+
+  if (first) {
+    strcpy(payload, "LIST_ALL_STUDENTS_SUCCESS||EMPTY");
+  }
+
+  res->status_code = STATUS_OK;
+  strcpy(res->payload, payload);
+
+  log_message("INFO", "Listed all students for user_id=%d",
+              token_data->user_id);
+
+  mysql_free_result(result);
+  free_token_data(token_data);
+
+  return res;
+}

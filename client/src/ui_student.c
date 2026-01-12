@@ -158,18 +158,76 @@ static void view_free_slots(int sockfd, const char *token) {
     }
     napms(2000);
   } else {
-    // Book group - slot_id&member_ids
-    char *members = show_input_form("Member IDs (comma separated):", false);
-    if (!members)
-      return;
+    // Book group - first show list of students
+    clear_screen();
+    draw_header("SELECT GROUP MEMBERS");
 
-    for (char *p = members; *p; p++) {
+    show_info("Loading students list...");
+    if (send_request(sockfd, "LIST_ALL_STUDENTS", token, "") >= 0) {
+      char *raw = receive_response(sockfd);
+      Response *r = parse_response(raw);
+
+      if (r && r->status_code == STATUS_OK) {
+        clear_screen();
+        draw_header("SELECT GROUP MEMBERS");
+
+        int fc;
+        char **flds = parse_payload_fields(r->payload, &fc);
+
+        int y = 3;
+        attron(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
+        mvprintw(y++, 2, "%-10s %-20s", "StudentID", "Username");
+        attroff(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
+        mvhline(y++, 2, ACS_HLINE, 35);
+
+        for (int i = 0; i < fc && y < LINES - 6; i++) {
+          if (strcmp(flds[i], "LIST_ALL_STUDENTS_SUCCESS") == 0)
+            continue;
+          if (strcmp(flds[i], "EMPTY") == 0) {
+            mvprintw(y++, 2, "No other students available");
+            break;
+          }
+
+          char *copy = strdup(flds[i]);
+          char *id = strtok(copy, "&");
+          char *name = strtok(NULL, "&");
+          if (id && name) {
+            mvprintw(y++, 2, "%-10s %-20s", id, name);
+          }
+          free(copy);
+        }
+
+        free_fields(flds, fc);
+
+        mvprintw(
+            y + 1, 2,
+            "Enter Member IDs (comma separated, e.g. 2,3) or 0 to cancel: ");
+        refresh();
+      }
+      if (r)
+        free_response(r);
+    }
+
+    // Get member IDs input
+    char members_input[256];
+    memset(members_input, 0, sizeof(members_input));
+    echo();
+    getnstr(members_input, 255);
+    noecho();
+
+    // Check for cancel or empty
+    if (strlen(members_input) == 0 || strcmp(members_input, "0") == 0) {
+      return;
+    }
+
+    // Replace commas with pipes
+    for (char *p = members_input; *p; p++) {
       if (*p == ',')
         *p = '|';
     }
 
     char data[512];
-    snprintf(data, sizeof(data), "%s&%s", slot_input, members);
+    snprintf(data, sizeof(data), "%s&%s", slot_input, members_input);
 
     show_info("Booking group meeting...");
     if (send_request(sockfd, "BOOK_GROUP", token, data) < 0) {
@@ -185,7 +243,6 @@ static void view_free_slots(int sockfd, const char *token) {
       if (r)
         free_response(r);
     }
-    free(members);
     napms(2000);
   }
 }
